@@ -1,0 +1,26 @@
+{
+  "name": "EvistepTask",
+  "version": "1.0.0",
+  "description": "Using express js convert xlsx file to json and save the values in mongo db",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MeriMelikyan1/EvistepTask.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MeriMelikyan1/EvistepTask/issues"
+  },
+  "homepage": "https://github.com/MeriMelikyan1/EvistepTask#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "convert-excel-to-json": "^1.6.1",
+    "express": "^4.17.1",
+    "multer": "^1.4.2"
+  }
+}
