@@ -1,0 +1,12 @@
+<section class="get">
+    <h3>Data from MONGODB</h3>
+    <div class="container">
+        {{# each items }}
+            <article class="item">
+                {{#each this}}
+                    <div class="row"> {{@key}} : {{this}} </div>
+                {{/each}}
+            </article>
+        {{/each}}
+    </div>
+</section>

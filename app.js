@@ -6,6 +6,13 @@ const excelToJson = require("convert-excel-to-json");
 const mongo = require('mongodb').MongoClient;
 const url = "mongodb://localhost:27017";
 const assert = require('assert');
+const path = require('path');
+const hbs = require('express-handlebars');
+let tableName='';
+
+app.engine('hbs', hbs({extname: 'hbs', defaultLayout: 'layout', layoutsDir: __dirname + '/views/layouts/'}));
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'hbs');
 
 app.use(bodyParser.json());
 const storage = multer.diskStorage({ //multers disk storage settings
@@ -17,34 +24,36 @@ const storage = multer.diskStorage({ //multers disk storage settings
         cb(null, file.fieldname + '-' + datetimestamp + ".xlsx");
     }
 });
-const saveToDb = (objects,name) => {
-    // let objects = JSON.parse(json);
-    // let objects = json; 
+const saveToDb = (objects,name) => { 
     mongo.connect(url, function(err, client) {
         const db = client.db('mydb');
         assert.equal(null, err);
-        // db.collection(name).insertMany(objects, function(err, result) {
-        db.collection("user-data").insertMany(objects, function(err, result) {
+        db.collection(name).insertMany(objects, function(err, result) {
           assert.equal(null, err);
-          console.log('Item inserted');
+          console.log('Items inserted');
           client.close();
         });
     });   
 }
-app.get('/get', function(req, res) {
-    var resultArray = [];
-    mongo.connect(url, function(err, client) {
-      assert.equal(null, err);
-      const db = client.db('mydb');
-      var cursor = db.collection('user-data').find();
-      cursor.forEach(function(doc, err) {
+app.get('/info', function(req, res) {
+    if(tableName) {
+        var resultArray = [];
+        mongo.connect(url, function(err, client) {
         assert.equal(null, err);
-        resultArray.push(doc);
-      }, function() {
-        client.close();
-        res.json({data:resultArray});
-      });
-    });
+        const db = client.db('mydb');
+        var cursor = db.collection(tableName).find();
+        cursor.forEach(function(doc, err) {
+            assert.equal(null, err);
+            resultArray.push(doc);
+        }, function() {
+            client.close();
+            res.render('index', {items: resultArray});
+        });
+        });
+    }
+    else {
+        res.render('error', {message:"Sorry no table for this excel file"} )
+    }
 });
 const upload = multer({ //multer settings
                 storage: storage,
@@ -60,13 +69,12 @@ const upload = multer({ //multer settings
 /** API path that will upload the files */
 app.post('/upload', function(req, res) {
     upload(req,res,function(err){
-        console.log(req);
         if(err){
-             res.json({error_code:1,err_desc:err});
+             res.render("error", { message : err});
              return;
         }
         if(!req.file){
-            res.json({error_code:1,err_desc:"No file passed"});
+            res.render("error", { message : "No file passed"});
             return;
         }
         try {
@@ -78,19 +86,22 @@ app.post('/upload', function(req, res) {
                 range: 'B6:L81',
                 columnToKey: {
                     '*': '{{columnHeader}}'
-                }
+                },
+                sheets: ['Sheet1']
             });
-            res.json({error_code:0,err_desc:null, data: result});
-            saveToDb(result.Sheet1,req.file.originalname);
-            console.log(result);
+
+            tableName = req.file.originalname+Date.now();
+            res.render('json', {items: result.Sheet1});
+
+            saveToDb(result.Sheet1,tableName);
         } catch (e){
-            res.json({error_code:1,err_desc:"Corupted excel file"});
+            res.render("error", { message : "Corupted excel file"});
         }
     });
 });
 
 app.get('/',function(req,res){
-    res.sendFile(__dirname + "/index.html");
+    res.render("form");
 });
 app.listen('3000', function(){
     console.log('running on 3000...');
